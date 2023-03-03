@@ -1,5 +1,8 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
 
 const { SECRET_KEY } = process.env;
 const { HttpError } = require("../middlewares");
@@ -20,13 +23,15 @@ const register = async (req, res) => {
   if (user) {
     throw HttpError(409, "Email in use");
   }
-  const hashPassword = await bcrypt.hash(password, bcrypt.genSaltSync(10));
+  const hashPassword = await bcrypt.hash(password, 10);
+  const avatarURL = gravatar.url(email);
   const result = await User.create({
     email,
     password: hashPassword,
     subscription,
+    avatarURL,
   });
-  res.status(201).json({ email, subscription });
+  res.status(201).json({ email, subscription, avatarURL });
 };
 
 const login = async (req, res) => {
@@ -55,13 +60,6 @@ const getCurrentUser = async (req, res) => {
   const { email, subscription } = req.user;
   res.status(200).json({ email, subscription });
 };
-
-const logout = async (req, res) => {
-  const { _id } = req.user;
-  await User.findByIdAndUpdate(_id, { token: null });
-  res.status(204).json({ message: "Log out" });
-};
-
 const updateSubscription = async (req, res) => {
   const { _id, email } = req.user;
   const { error } = userUpdateSchema(req.body);
@@ -90,10 +88,40 @@ const updateSubscription = async (req, res) => {
   });
 };
 
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: tempUpload, originalname } = req.file;
+  const imageName = `${_id}_${originalname}`;
+
+  try {
+    const resultUpload = path.join(
+      __dirname,
+      "../",
+      "public",
+      "avatars",
+      imageName
+    );
+    await fs.rename(tempUpload, resultUpload);
+    const avatarURL = path.join("public", "avatars", imageName);
+    await User.findByIdAndUpdate(_id, { avatarURL });
+    res.status(200).json({ avatarURL });
+  } catch (err) {
+    await fs.unlink(tempUpload);
+    throw err;
+  }
+};
+
+const logout = async (req, res) => {
+  const { _id } = req.user;
+  await User.findByIdAndUpdate(_id, { token: null });
+  res.status(204).json({ message: "Log out" });
+};
+
 module.exports = {
   register,
   login,
   getCurrentUser,
-  logout,
   updateSubscription,
+  updateAvatar,
+  logout,
 };

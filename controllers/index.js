@@ -13,6 +13,7 @@ const {
   getCurrentUser,
   logout,
   updateSubscription,
+  updateAvatar,
 } = require("./users");
 
 module.exports = {
@@ -21,6 +22,7 @@ module.exports = {
   logout,
   getCurrentUser,
   updateSubscription,
+  updateAvatar,
   listContacts,
   getById,
   removeContact,
