@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
+const Jimp = require("jimp");
 
 const { SECRET_KEY } = process.env;
 const { HttpError } = require("../middlewares");
@@ -89,18 +90,28 @@ const updateSubscription = async (req, res) => {
 };
 
 const updateAvatar = async (req, res) => {
+  const avatarDir = path.join(__dirname, "../", "public", "avatars");
   const { _id } = req.user;
+
+  if (!req.file) {
+    return res.status(400).json({ message: "There is no file" });
+  }
+
   const { path: tempUpload, originalname } = req.file;
   const imageName = `${_id}_${originalname}`;
 
   try {
-    const resultUpload = path.join(
-      __dirname,
-      "../",
-      "public",
-      "avatars",
-      imageName
-    );
+    const imgProcessed = await Jimp.read(tempUpload);
+    await imgProcessed
+      .autocrop()
+      .cover(
+        250,
+        250,
+        Jimp.HORIZONTAL_ALIGN_CENTER || Jimp.VERTICAL_ALIGN_MIDDLE
+      )
+      .writeAsync(tempUpload);
+
+    const resultUpload = path.join(avatarDir, imageName);
     await fs.rename(tempUpload, resultUpload);
     const avatarURL = path.join("public", "avatars", imageName);
     await User.findByIdAndUpdate(_id, { avatarURL });
