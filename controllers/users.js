@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { uid } = require("uid");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
 const path = require("path");
@@ -98,7 +99,7 @@ const updateAvatar = async (req, res) => {
   }
 
   const { path: tempUpload, originalname } = req.file;
-  const imageName = `${_id}_${originalname}`;
+  const imageName = `${uid(8)}_${originalname}`;
 
   try {
     const imgProcessed = await Jimp.read(tempUpload);
