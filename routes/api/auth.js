@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { getCurrent, ctrlWrapper } = require("../../middlewares");
+const { getCurrent, ctrlWrapper, upload } = require("../../middlewares");
 
 const {
   register,
   login,
   getCurrentUser,
+  updateAvatar,
   logout,
   updateSubscription,
 } = require("../../controllers");
@@ -13,7 +14,13 @@ const {
 router.post("/register", ctrlWrapper(register));
 router.post("/login", ctrlWrapper(login));
 router.get("/current", getCurrent, ctrlWrapper(getCurrentUser));
+router.patch("/subscription", getCurrent, ctrlWrapper(updateSubscription));
+router.patch(
+  "/avatars",
+  getCurrent,
+  upload.single("avatar"),
+  ctrlWrapper(updateAvatar)
+);
 router.post("/logout", getCurrent, ctrlWrapper(logout));
-router.patch("/",getCurrent,ctrlWrapper(updateSubscription))
 
 module.exports = router;
