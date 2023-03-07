@@ -7,7 +7,6 @@ const fs = require("fs/promises");
 const Jimp = require("jimp");
 
 const { SECRET_KEY } = process.env;
-const { HttpError } = require("../middlewares");
 const { User } = require("../models");
 const {
   userRegJoiSchema,
@@ -18,12 +17,14 @@ const {
 const register = async (req, res) => {
   const { error } = userRegJoiSchema(req.body);
   if (error) {
-    throw HttpError(400, "Error from Joi or other validation library");
+    return res
+      .status(400)
+      .json({ message: "Error from Joi or other validation library" });
   }
   const { email, password, subscription } = req.body;
   const user = await User.findOne({ email });
   if (user) {
-    throw HttpError(409, "Email in use");
+    return res.status(409).json({ message: "Email in use" });
   }
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravatar.url(email);
@@ -38,15 +39,17 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   const { error } = userLoginJoiSchema(req.body);
-  if (error) {
-    throw HttpError(400, "Error from Joi or other validation library");
+  if (error || Object.keys(req.body) === 0) {
+    return res
+      .status(400)
+      .json({ message: "Error from Joi or other validation library" });
   }
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
   const passCompare = await bcrypt.compare(password, user.password);
   if (!user || !passCompare) {
-    throw HttpError(401, "Email or password is wrong");
+    return res.status(401).json({ message: "Email or password is wrong" });
   }
   const payload = {
     id: user._id,
