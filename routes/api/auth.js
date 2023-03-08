@@ -9,6 +9,7 @@ const {
   updateAvatar,
   logout,
   updateSubscription,
+  deleteUserByMail,
 } = require("../../controllers");
 
 router.post("/register", ctrlWrapper(register));
@@ -22,5 +23,6 @@ router.patch(
   ctrlWrapper(updateAvatar)
 );
 router.post("/logout", getCurrent, ctrlWrapper(logout));
+router.delete("/", deleteUserByMail);
 
 module.exports = router;

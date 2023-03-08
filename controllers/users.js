@@ -132,6 +132,20 @@ const logout = async (req, res) => {
   res.status(204).json({ message: "Log out" });
 };
 
+const deleteUserByMail = async (req, res) => {
+  try {
+    const email = req.query.email;
+    const userToRemove = await service.deleteUser(email);
+    if (!userToRemove) {
+      return res.status(404).json({ message: `User with email:${email} not found` });
+    } else {
+      res.status(200).json({ message: "User deleted from data base" });
+    }
+  } catch (error) {
+    console.log(`Error: ${error.message}`.red);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -139,4 +153,5 @@ module.exports = {
   updateSubscription,
   updateAvatar,
   logout,
+  deleteUserByMail,
 };

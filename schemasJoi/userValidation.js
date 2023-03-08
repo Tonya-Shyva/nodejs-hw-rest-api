@@ -1,6 +1,6 @@
 const Joi = require("joi");
 
-const { validator } = require("../middlewares");
+const validator = require("../hadlers/validator");
 
 const userRegSchema = Joi.object({
   password: Joi.string().min(6).required(),

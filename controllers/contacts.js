@@ -1,6 +1,6 @@
 const { Contact } = require("../models");
 
-const { HttpError, ctrlWrapper } = require("../middlewares");
+const { ctrlWrapper } = require("../middlewares");
 
 const {
   contactPostValidator,
@@ -42,10 +42,10 @@ const listContacts = async (req, res) => {
 
 const getById = async (req, res, next) => {
   const { contactId } = req.params;
-  const contact = await Contact.findById(contactId);
+  const contact = await Contact.findOne({ owner: req.user._id, contactId });
 
   if (!contact) {
-    throw HttpError(404, "Not found");
+    return res.status(404).json({ message: "Not found" });
   }
   res.status(200).json(contact);
 };
@@ -73,9 +73,13 @@ const updateContact = async (req, res, next) => {
   if (Object.keys(req.body).length === 0) {
     res.status(400).json({ message: "missing fields" });
   }
-  const contact = await Contact.findByIdAndUpdate(contactId, req.body, {
-    new: true,
-  });
+  const contact = await Contact.findOneAndUpdate(
+    { contactId, owner: req.user._id },
+    req.body,
+    {
+      new: true,
+    }
+  );
 
   if (contact) {
     res.status(200).json(contact);
@@ -86,7 +90,10 @@ const updateContact = async (req, res, next) => {
 
 const removeContact = async (req, res, next) => {
   const { contactId } = req.params;
-  const contactToRemove = await Contact.findByIdAndRemove(contactId);
+  const contactToRemove = await Contact.findOneAndRemove({
+    contactId,
+    owner: req.user._id,
+  });
   if (!contactToRemove) {
     res.status(404).json({ message: "Not found contact" });
   }
