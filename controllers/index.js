@@ -9,6 +9,8 @@ const {
 
 const {
   register,
+  verifyEmail,
+  resendVerifyEmail,
   login,
   getCurrentUser,
   logout,
@@ -19,6 +21,8 @@ const {
 
 module.exports = {
   register,
+  verifyEmail,
+  resendVerifyEmail,
   login,
   logout,
   getCurrentUser,
