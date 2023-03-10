@@ -10,9 +10,11 @@ const { SECRET_KEY } = process.env;
 const { User } = require("../models");
 const {
   userRegJoiSchema,
+  userVerifyJoiSchema,
   userLoginJoiSchema,
   userUpdateSchema,
 } = require("../schemasJoi");
+const sendEmail = require("../helpers/sendEmail");
 
 const register = async (req, res) => {
   const { error } = userRegJoiSchema(req.body);
@@ -28,13 +30,66 @@ const register = async (req, res) => {
   }
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravatar.url(email);
+  const verificationToken = uid();
   const result = await User.create({
     email,
     password: hashPassword,
     subscription,
     avatarURL,
+    verificationToken,
   });
+  const mail = {
+    to: email,
+    subject: "Confirm verification",
+    html: `<h1>Thank you for registration</h1>
+    <p>Your login: ${email}</p>
+    <p>Follow the link to confirm registration:</p>
+    <a href="http://localhost:3000/api/users/verify/${verificationToken}" target="_blank">Confirm</a>`,
+  };
+  await sendEmail(mail);
   res.status(201).json({ email, subscription, avatarURL });
+};
+
+const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: "",
+  });
+  res.status(200).json({ message: "Verification successful" });
+};
+
+const resendVerifyEmail = async (req, res) => {
+  const { error } = userVerifyJoiSchema(req.body);
+  if (error) {
+    return res
+      .status(400)
+      .json({ message: "Error from Joi or other validation library" });
+  }
+  const { email } = req.user;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ message: "Not Found" });
+  }
+  if (user.verify) {
+    return res
+      .status(400)
+      .json({ message: "Verification has already been passed" });
+  }
+  const mail = {
+    to: email,
+    subject: "Confirm verification",
+    html: `<h1>Thank you for registration</h1>
+    <p>Your login: ${email}</p>
+    <p>Follow the link to confirm registration:</p>
+    <a href="http://localhost:3000/api/users/verify/${verificationToken}" target="_blank">Confirm</a>`,
+  };
+  await sendEmail(mail);
+  res.status(200).json({ message: "Verification email sent" });
 };
 
 const login = async (req, res) => {
@@ -50,6 +105,9 @@ const login = async (req, res) => {
   const passCompare = await bcrypt.compare(password, user.password);
   if (!user || !passCompare) {
     return res.status(401).json({ message: "Email or password is wrong" });
+  }
+  if (!user.verify) {
+    return res.status(403).json({ message: "Email not verify" });
   }
   const payload = {
     id: user._id,
@@ -137,7 +195,9 @@ const deleteUserByMail = async (req, res) => {
     const email = req.query.email;
     const userToRemove = await service.deleteUser(email);
     if (!userToRemove) {
-      return res.status(404).json({ message: `User with email:${email} not found` });
+      return res
+        .status(404)
+        .json({ message: `User with email:${email} not found` });
     } else {
       res.status(200).json({ message: "User deleted from data base" });
     }
@@ -148,6 +208,8 @@ const deleteUserByMail = async (req, res) => {
 
 module.exports = {
   register,
+  verifyEmail,
+  resendVerifyEmail,
   login,
   getCurrentUser,
   updateSubscription,

@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const validator = require("../hadlers/validator");
+const { validator } = require("../middlewares");
 
 const postSchema = Joi.object({
   name: Joi.string().required(),

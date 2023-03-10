@@ -4,6 +4,8 @@ const { getCurrent, ctrlWrapper, upload } = require("../../middlewares");
 
 const {
   register,
+  verifyEmail,
+  resendVerifyEmail,
   login,
   getCurrentUser,
   updateAvatar,
@@ -13,6 +15,8 @@ const {
 } = require("../../controllers");
 
 router.post("/register", ctrlWrapper(register));
+router.get("/verification/:verificationToken", ctrlWrapper(verifyEmail));
+router.post("/verify", ctrlWrapper(resendVerifyEmail));
 router.post("/login", ctrlWrapper(login));
 router.get("/current", getCurrent, ctrlWrapper(getCurrentUser));
 router.patch("/subscription", getCurrent, ctrlWrapper(updateSubscription));

@@ -6,12 +6,14 @@ const {
 
 const {
   userRegJoiSchema,
+  userVerifyJoiSchema,
   userLoginJoiSchema,
   userUpdateSchema,
 } = require("./userValidation");
 
 module.exports = {
   userRegJoiSchema,
+  userVerifyJoiSchema,
   userLoginJoiSchema,
   userUpdateSchema,
   contactPostValidator,
